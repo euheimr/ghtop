@@ -1,13 +1,16 @@
 package main
 
+// github.com/shirou/gopsutil
+// github.com/rivo/tview
+// github.com/gdamore/tcell
+
 import (
-	"github.com/euheimr/ghtop/devices"
-	"github.com/euheimr/ghtop/utils"
+	"github.com/euheimr/ghtop/ui"
+	"github.com/euheimr/ghtop/util"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/shirou/gopsutil/v3/host"
 	"log"
-	"strconv"
+	"time"
 )
 
 var cfg = util.ReadConfig()
@@ -15,148 +18,74 @@ var cfg = util.ReadConfig()
 var RefreshInterval = cfg.Duration("UpdateInterval") * time.Millisecond
 var GroupProcesses = cfg.Bool("GroupProcesses")
 var TempScale = cfg.String("TempScale")
-var cpuCores = devices.CpuCores()
-var cpuThreads = devices.CpuThreads()
 
-var sysInfoData = map[string]string{
-	"hostname": hostInfo.Hostname,
-	"socket-cores": strconv.FormatInt(int64(cpuSockets), 10) + "/" +
-		strconv.FormatInt(int64(cpuCores)*int64(cpuSockets), 10),
-	"threads": strconv.FormatInt(int64(cpuThreads), 10),
-}
-
-var widgetLabels = map[string]string{
-	"sys-info": "[System Info]",
-	"cpu":      "[CPU: " + cpuModelName + "]",
-	"procs":    "[Processes]",
-	"cpu-temp": "[CPU Temp]",
-	"mem":      "[Memory]",
-	"net":      "[Network]",
-	"gpu":      "[GPU: ]",
-	"gpu-temp": "[GPU Temp]",
-}
+var (
+	app   *tview.Application
+	fMain *tview.Flex
+)
 
 func main() {
 	screen, err := tcell.NewScreen()
 	if err != nil {
 		log.Fatalf("[%s] Failed to initialize tcell.NewScreen(): %v",
-			utils.GetFuncName(), err)
+			util.GetFuncName(), err)
 	}
+	// fMain is the main box drawn to the screen. It holds all the other boxes
+	//	within it.
+	fMain = tview.NewFlex().SetDirection(tview.FlexRow)
+	fMain.SetBorderStyle(tcell.StyleDefault)
+	//fMain.SetBorder(false)
 
-	app := tview.NewApplication().SetScreen(screen).EnableMouse(true)
+	app = tview.NewApplication().
+		SetScreen(screen).
+		EnableMouse(true).
+		ResizeToFullScreen(fMain)
 
 	sysInfoBox := tview.NewTextView()
 	cpuBox := tview.NewBox()
-	cpuTempBox := tview.NewBox()
 	memBox := tview.NewBox()
-	procsTbl := tview.NewTable().
-		SetFixed(0, 6).
-		SetSeparator(tview.BoxDrawingsLightVertical)
-	//SetBordersColor(tcell.ColorYellow)
+
+	procsTbl := tview.NewTable()
+	cpuTempBox := tview.NewBox()
 	netBox := tview.NewBox()
+
 	gpuBox := tview.NewBox()
 	gpuTempBox := tview.NewBox()
 
-	flex := tview.NewFlex().SetDirection(tview.FlexRow)
-	flex.SetBorderStyle(tcell.StyleDefault)
+	fRow1 := tview.NewFlex()
+	fRow1.AddItem(sysInfoBox, 0, 3, false).
+		AddItem(cpuBox, 0, 10, false).
+		AddItem(memBox, 0, 6, false)
 
-	go func() {
-		app.QueueUpdateDraw(func() {
-			//flex.Clear()
-			//SYSINFO
-			w := sysInfoBox.BatchWriter()
-			defer w.Close()
-			w.Clear()
-			w.Write([]byte("Hostname: " + hostInfo.Hostname + "\n" +
-				//"CPU Clk: " + strconv.FormatFloat(cpuInfo[0].Mhz/1000, 'f', -1, 64) + " GHz\n" +
-				"Socket/Cores: " + sysInfoData["socket-cores"] + "\n" +
-				"Threads: " + sysInfoData["threads"] + "\n" +
-				//"Cache Size: " + strconv.FormatInt(int64(cpuInfo[0].CacheSize), 10) + "\n" +
-				"Processes: " + strconv.FormatInt(int64(hostInfo.Procs), 10) + "\n"))
+	fRow2 := tview.NewFlex()
+	fRow2.AddItem(procsTbl, 0, 2, false).
+		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+			AddItem(cpuTempBox, 0, 1, false).
+			AddItem(netBox, 0, 1, false),
+			0, 1, false)
 
-			// PROCESSES
-			tblHeaderColor := tcell.ColorYellow
-			tblHeaderAlign := tview.AlignCenter
-			procsTbl.
-				SetCell(0, 0, &tview.TableCell{
-					Text:      "CNT",
-					Color:     tblHeaderColor,
-					Align:     tblHeaderAlign,
-					Expansion: 3,
-					MaxWidth:  4,
-				}).
-				SetCell(0, 1, &tview.TableCell{
-					Text:      "USER",
-					Color:     tblHeaderColor,
-					Align:     tblHeaderAlign,
-					Expansion: 6,
-					MaxWidth:  12,
-				}).
-				SetCell(0, 2, &tview.TableCell{
-					Text:      "Exec",
-					Color:     tblHeaderColor,
-					Align:     tblHeaderAlign,
-					Expansion: 24,
-					MaxWidth:  0,
-				}).
-				SetCell(0, 3, &tview.TableCell{
-					Text:      "CPU%",
-					Color:     tblHeaderColor,
-					Align:     tblHeaderAlign,
-					Expansion: 4,
-					MaxWidth:  5,
-				}).
-				SetCell(0, 4, &tview.TableCell{
-					Text:      "MEM%",
-					Color:     tblHeaderColor,
-					Align:     tblHeaderAlign,
-					Expansion: 4,
-					MaxWidth:  5,
-				}).
-				SetCell(0, 5, &tview.TableCell{
-					Text:      "GPU%",
-					Color:     tblHeaderColor,
-					Align:     tblHeaderAlign,
-					Expansion: 4,
-					MaxWidth:  5,
-				}) //.
-			// todo: START DATA
-			//SetCell(1, 0, &tview.TableCell{
-			//	Text:  strconv.Itoa(colCount),
-			//	Color: tcell.ColorWhite,
-			//	Align: tview.AlignCenter,
-			//})
+	// If there is a GPU, then add `GPU` and `GPU Temp` boxes
+	if gpuBox != nil {
+		fRow2.AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+			AddItem(gpuBox, 0, 1, false).
+			AddItem(gpuTempBox, 0, 1, false),
+			0, 1, false)
+	}
+	// Add Row1 and Row2 to flexMain
+	fMain.AddItem(fRow1, 0, 1, false)
+	fMain.AddItem(fRow2, 0, 2, false)
 
-			sysInfoBox.SetBorder(true).SetTitle(widgetLabels["sys-info"])
-			cpuBox.SetBorder(true).SetTitle(widgetLabels["cpu"])
-			cpuTempBox.SetBorder(true).SetTitle(widgetLabels["cpu-temp"])
-			memBox.SetBorder(true).SetTitle(widgetLabels["mem"])
-			procsTbl.SetBorder(true).SetTitle(widgetLabels["procs"])
-			netBox.SetBorder(true).SetTitle(widgetLabels["net"])
-			gpuBox.SetBorder(true).SetTitle(widgetLabels["gpu"])
-			gpuTempBox.SetBorder(true).SetTitle(widgetLabels["gpu-temp"])
+	// These functions are where all the boxes are drawn via Go Routines
+	go ui.UpdateSysInfoBox(app, sysInfoBox, RefreshInterval)
+	go ui.UpdateCpuBox(app, cpuBox, RefreshInterval)
+	go ui.UpdateMemBox(app, memBox, RefreshInterval)
+	go ui.UpdateProcBox(app, procsTbl, RefreshInterval, GroupProcesses)
+	go ui.UpdateCpuTempBox(app, cpuTempBox, RefreshInterval)
+	// netBox
+	// gpuBox
+	// gpuTempBox
 
-			flex.
-				AddItem(tview.NewFlex().
-					AddItem(sysInfoBox, 0, 3, false).
-					AddItem(cpuBox, 0, 8, false).
-					AddItem(memBox, 0, 4, false),
-					0, 1, false).
-				AddItem(tview.NewFlex().
-					AddItem(procsTbl, 0, 2, false).
-					AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-						AddItem(cpuTempBox, 0, 1, false).
-						AddItem(netBox, 0, 1, false),
-						0, 1, false).
-					AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-						AddItem(gpuBox, 0, 1, false).
-						AddItem(gpuTempBox, 0, 1, false),
-						0, 1, false),
-					0, 2, false)
-		})
-	}()
-
-	if err := app.SetRoot(flex, true).SetFocus(flex).Run(); err != nil {
+	if err := app.SetRoot(fMain, true).SetFocus(procsTbl).Run(); err != nil {
 		panic(err)
 	}
 }
