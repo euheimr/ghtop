@@ -10,11 +10,11 @@ import (
 	"strconv"
 )
 
-var hostInfo, _ = host.Info()
+var cfg = util.ReadConfig()
 
-// var cpuInfo, _ = cpu.Info()
-var cpuModelName = devices.CpuModelName()
-var cpuSockets = devices.CpuSockets()
+var RefreshInterval = cfg.Duration("UpdateInterval") * time.Millisecond
+var GroupProcesses = cfg.Bool("GroupProcesses")
+var TempScale = cfg.String("TempScale")
 var cpuCores = devices.CpuCores()
 var cpuThreads = devices.CpuThreads()
 
