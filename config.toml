@@ -1,0 +1,6 @@
+# Temperature units - C for Celsius, F for Fahrenheit
+TempScale="C"
+# Set how frequently to update the UI (in milliseconds)
+UpdateInterval=80
+# Set network IO to mbps if true
+mbps=false
