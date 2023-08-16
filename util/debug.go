@@ -1,4 +1,4 @@
-package utils
+package util
 
 import (
 	"runtime"
@@ -12,5 +12,5 @@ func GetFuncName() string {
 	fileName := fileStr[len(fileStr)-1]
 	lineNum := strconv.FormatInt(int64(line), 10)
 
-	return fileName + "(" + lineNum + ")"
+	return fileName + "(" + lineNum + ") - "
 }
