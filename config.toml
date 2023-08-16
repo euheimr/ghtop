@@ -1,6 +1,8 @@
 # Temperature units - C for Celsius, F for Fahrenheit
 TempScale="C"
+# Enable or disable grouping of processes - true or false
+GroupProcesses=false
 # Set how frequently to update the UI (in milliseconds)
-UpdateInterval=80
+UpdateInterval=700
 # Set network IO to mbps if true
 mbps=false
