@@ -10,6 +10,8 @@ var memBoxLabel = "[ Memory ]"
 func UpdateMemBox(app *tview.Application, memBox *tview.Box,
 	update time.Duration) {
 
+	memBox.SetBorder(true).SetTitle(memBoxLabel)
+
 	for {
 		// TODO: get memory data and return it with the box
 
@@ -20,8 +22,6 @@ func UpdateMemBox(app *tview.Application, memBox *tview.Box,
 			// TODO: draw the memory data text below the graph
 		})
 
-		// draw border LAST!
-		memBox.SetBorder(true).SetTitle(memBoxLabel)
 	}
 
 }
