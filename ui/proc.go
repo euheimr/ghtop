@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/euheimr/ghtop/devices"
+	"github.com/euheimr/ghtop/util"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"math"
@@ -13,6 +14,22 @@ import (
 type ProcSortMethod string
 type ProcSortDirection string
 
+type ProcTbl struct {
+	Text     string
+	MinWidth int
+	MaxWidth int
+}
+
+type ProcTblCol struct {
+	Pid  *ProcTbl
+	Cnt  *ProcTbl
+	User *ProcTbl
+	Exec *ProcTbl
+	Cpu  *ProcTbl
+	Mem  *ProcTbl
+	Gpu  *ProcTbl
+}
+
 const (
 	SortPid  ProcSortMethod = "p"
 	SortUser                = "u"
@@ -22,43 +39,36 @@ const (
 )
 
 const (
-	SortAsc  ProcSortDirection = "a"
-	SortDesc                   = "d"
+	SortAsc   ProcSortDirection = "a"
+	SortDesc                    = "d"
+	DownArrow string            = "▼"
+	UpArrow                     = "▲"
 )
 
-const (
-	DownArrow string = "▼"
-	UpArrow          = "▲"
+var groupProcesses = util.Config.GroupProcesses
+
+var (
+	procBoxLabel  = "[ Processes ]"
+	processes     []devices.Process
+	procs         []devices.Process
+	SortMethod    ProcSortMethod
+	SortDirection ProcSortDirection
 )
 
-type ProcTbl struct {
-	Text     string
-	MinWidth int
-	MaxWidth int
+var procTblCol = &ProcTblCol{
+	Pid:  &ProcTbl{"PID", 3, 4},
+	Cnt:  &ProcTbl{"CNT", 3, 4},
+	User: &ProcTbl{"USER", 5, 8},
+	Exec: &ProcTbl{"EXEC", 12, 16},
+	Cpu:  &ProcTbl{"CPU%", 4, 4},
+	Mem:  &ProcTbl{"MEM%", 4, 4},
+	Gpu:  &ProcTbl{"GPU%", 4, 4},
 }
 
-type ProcTblCol struct {
-	Pid  ProcTbl
-	Cnt  ProcTbl
-	User ProcTbl
-	Exec ProcTbl
-	Cpu  ProcTbl
-	Mem  ProcTbl
-	Gpu  ProcTbl
-}
-
-var procBoxLabel = "[ Processes ]"
-var SortMethod ProcSortMethod
-var SortDirection ProcSortDirection
-
-var procTblCol = ProcTblCol{
-	Pid:  ProcTbl{"PID", 3, 4},
-	Cnt:  ProcTbl{"CNT", 3, 4},
-	User: ProcTbl{"USER", 6, 8},
-	Exec: ProcTbl{"EXEC", 12, 16},
-	Cpu:  ProcTbl{"CPU%", 4, 4},
-	Mem:  ProcTbl{"MEM%", 4, 4},
-	Gpu:  ProcTbl{"GPU%", 4, 4},
+func init() {
+	SortDirection = SortDesc
+	processes, _ = devices.GetProcs(groupProcesses)
+	procs = sortProcs(processes, SortDirection, SortMethod)
 }
 
 func roundFloat(float float64, precision int) float64 {
@@ -68,10 +78,10 @@ func roundFloat(float float64, precision int) float64 {
 
 func formatFloat(float float64, precision int) string {
 	roundedFloat := roundFloat(float, precision)
-	return strconv.FormatFloat(roundedFloat, 'g', precision, 64)
+	return strconv.FormatFloat(roundedFloat, 'g', 3, 64)
 }
 
-func getHeaderNames(groupProcesses bool) []ProcTbl {
+func getHeaderNames() []ProcTbl {
 	header := []ProcTbl{
 		{Text: procTblCol.Pid.Text, MinWidth: procTblCol.Pid.MinWidth,
 			MaxWidth: procTblCol.Pid.MaxWidth},
@@ -132,14 +142,14 @@ func sortProcs(processes []devices.Process, sortDirection ProcSortDirection,
 }
 
 func UpdateProcBox(app *tview.Application, procsTbl *tview.Table,
-	refresh time.Duration, groupProcesses bool) {
+	update time.Duration) {
 
 	tblHeaderTextColor := tcell.ColorYellow
 	tblHeaderBkgdColor := tcell.ColorRed
 	tblHeaderAlign := tview.AlignCenter
 
 	// Construct the header row by column
-	headerText := getHeaderNames(groupProcesses)
+	headerText := getHeaderNames()
 
 	procsTbl.SetFixed(1, 0).
 		SetSeparator(tview.BoxDrawingsLightVertical).
@@ -149,29 +159,11 @@ func UpdateProcBox(app *tview.Application, procsTbl *tview.Table,
 		SetTitle(procBoxLabel)
 
 	// Set the default sort direction and selected cell (CPU%, descending)
-	SortDirection = SortDesc
 	procsTbl.Select(0, 3)
 
 	for {
-		// First get the processes BEFORE we sleep for the refresh. This
-		//	helps us load the data within the window/time period of sleeping.
-		processes, _ := devices.GetProcs(groupProcesses)
 
-		// Construct the header row by column
-		for col := 0; col < len(headerText); col++ {
-			procsTbl.SetCell(
-				0, col, &tview.TableCell{
-					Text:            headerText[col].Text,
-					Expansion:       headerText[col].MinWidth,
-					MaxWidth:        headerText[col].MaxWidth,
-					Color:           tblHeaderTextColor,
-					BackgroundColor: tblHeaderBkgdColor,
-					Align:           tblHeaderAlign,
-					Transparent:     true,
-				})
-		}
-
-		procs := sortProcs(processes, SortDirection, SortMethod)
+		//procs = sortProcs(processes, SortDirection, SortMethod)
 
 		//switch SortDirection {
 		//case SortAsc:
@@ -182,79 +174,94 @@ func UpdateProcBox(app *tview.Application, procsTbl *tview.Table,
 
 		//procsTbl.GetMouseCapture()
 
-		// Get the initial sorting method (by default sorts by CPU)
-		procsTbl.SetMouseCapture(
-			func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
-				// TODO: first clear all up or down arrows in the table header names
-				headerText = getHeaderNames(groupProcesses)
-
-				// get the selected column and set the sort direction
-				_, selectedCol := procsTbl.GetSelection()
-				if selectedCol == 0 {
-					switch SortDirection {
-					case SortAsc:
-						headerText[selectedCol].Text = procTblCol.Pid.Text + UpArrow
-						if groupProcesses {
-							headerText[selectedCol].Text = procTblCol.Cnt.Text + UpArrow
-						}
-						procs = sortProcs(procs, SortAsc, SortPid)
-					case SortDesc:
-						headerText[selectedCol].Text = procTblCol.Pid.Text + DownArrow
-						if groupProcesses {
-							headerText[selectedCol].Text = procTblCol.Cnt.Text + DownArrow
-						}
-						procs = sortProcs(procs, SortDesc, SortPid)
-					}
-				}
-				if selectedCol == 1 {
-					switch SortDirection {
-					case SortAsc:
-						headerText[selectedCol].Text = procTblCol.User.Text + UpArrow
-						procs = sortProcs(procs, SortAsc, SortUser)
-					case SortDesc:
-						headerText[selectedCol].Text = procTblCol.User.Text + DownArrow
-						procs = sortProcs(procs, SortDesc, SortUser)
-					}
-				}
-				if selectedCol == 2 {
-					switch SortDirection {
-					case SortAsc:
-						headerText[selectedCol].Text = procTblCol.Exec.Text + UpArrow
-						procs = sortProcs(procs, SortAsc, SortExec)
-					case SortDesc:
-						headerText[selectedCol].Text = procTblCol.Exec.Text + DownArrow
-						procs = sortProcs(procs, SortDesc, SortExec)
-					}
-				}
-				if selectedCol == 3 {
-					switch SortDirection {
-					case SortAsc:
-						headerText[selectedCol].Text = procTblCol.Cpu.Text + UpArrow
-						procs = sortProcs(procs, SortAsc, SortCpu)
-					case SortDesc:
-						headerText[selectedCol].Text = procTblCol.Cpu.Text + DownArrow
-						procs = sortProcs(procs, SortDesc, SortCpu)
-					}
-				}
-				if selectedCol == 4 {
-					switch SortDirection {
-					case SortAsc:
-						headerText[selectedCol].Text = procTblCol.Mem.Text + UpArrow
-						procs = sortProcs(procs, SortAsc, SortMem)
-					case SortDesc:
-						headerText[selectedCol].Text = procTblCol.Mem.Text + DownArrow
-						procs = sortProcs(procs, SortDesc, SortMem)
-					}
-				}
-				return action, event
-			})
-
-		time.Sleep(refresh)
+		time.Sleep(update)
 		// We want to keep the amount of rows scrolled down then set it last
 		//	after everything is drawn.
 		rowOffset, _ := procsTbl.GetOffset()
 
 		app.QueueUpdateDraw(func() {
+			// Construct the header row by column
+			for col := 0; col < len(headerText); col++ {
+				procsTbl.SetCell(
+					0, col, &tview.TableCell{
+						Text:            headerText[col].Text,
+						Expansion:       headerText[col].MinWidth,
+						MaxWidth:        headerText[col].MaxWidth,
+						Color:           tblHeaderTextColor,
+						BackgroundColor: tblHeaderBkgdColor,
+						Align:           tblHeaderAlign,
+						Transparent:     true,
+					})
+			}
+
+			processes, _ = devices.GetProcs(groupProcesses)
+
+			procsTbl.SetMouseCapture(
+				func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+					// First reset table header names (remove up and down arrows)
+					headerText = getHeaderNames()
+
+					// Get the selected column and set the sort direction
+					_, selectedCol := procsTbl.GetSelection()
+					if selectedCol == 0 {
+						switch SortDirection {
+						case SortAsc:
+							headerText[selectedCol].Text = procTblCol.Pid.Text + UpArrow
+							if groupProcesses {
+								headerText[selectedCol].Text = procTblCol.Cnt.Text + UpArrow
+							}
+							procs = sortProcs(procs, SortAsc, SortPid)
+						case SortDesc:
+							headerText[selectedCol].Text = procTblCol.Pid.Text + DownArrow
+							if groupProcesses {
+								headerText[selectedCol].Text = procTblCol.Cnt.Text + DownArrow
+							}
+							procs = sortProcs(procs, SortDesc, SortPid)
+						}
+					}
+					if selectedCol == 1 {
+						switch SortDirection {
+						case SortAsc:
+							headerText[selectedCol].Text = procTblCol.User.Text + UpArrow
+							procs = sortProcs(procs, SortAsc, SortUser)
+						case SortDesc:
+							headerText[selectedCol].Text = procTblCol.User.Text + DownArrow
+							procs = sortProcs(procs, SortDesc, SortUser)
+						}
+					}
+					if selectedCol == 2 {
+						switch SortDirection {
+						case SortAsc:
+							headerText[selectedCol].Text = procTblCol.Exec.Text + UpArrow
+							procs = sortProcs(procs, SortAsc, SortExec)
+						case SortDesc:
+							headerText[selectedCol].Text = procTblCol.Exec.Text + DownArrow
+							procs = sortProcs(procs, SortDesc, SortExec)
+						}
+					}
+					if selectedCol == 3 {
+						switch SortDirection {
+						case SortAsc:
+							headerText[selectedCol].Text = procTblCol.Cpu.Text + UpArrow
+							procs = sortProcs(procs, SortAsc, SortCpu)
+						case SortDesc:
+							headerText[selectedCol].Text = procTblCol.Cpu.Text + DownArrow
+							procs = sortProcs(procs, SortDesc, SortCpu)
+						}
+					}
+					if selectedCol == 4 {
+						switch SortDirection {
+						case SortAsc:
+							headerText[selectedCol].Text = procTblCol.Mem.Text + UpArrow
+							procs = sortProcs(procs, SortAsc, SortMem)
+						case SortDesc:
+							headerText[selectedCol].Text = procTblCol.Mem.Text + DownArrow
+							procs = sortProcs(procs, SortDesc, SortMem)
+						}
+					}
+					return action, event
+				})
+
 			for i := range procs {
 				// Start at _row == 1 and not zero because we don't want to
 				//	overwrite the header row!
