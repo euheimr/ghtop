@@ -13,11 +13,11 @@ import (
 	"time"
 )
 
-var cfg = util.ReadConfig()
+var UpdateInterval = util.Config.UpdateInterval * time.Millisecond
+var GroupProcesses = util.Config.GroupProcesses
+var Nvidia = util.Config.Nvidia
 
-var RefreshInterval = cfg.Duration("UpdateInterval") * time.Millisecond
-var GroupProcesses = cfg.Bool("GroupProcesses")
-var TempScale = cfg.String("TempScale")
+//var TempScale = util.Config.TempScale
 
 var (
 	app   *tview.Application
@@ -65,7 +65,7 @@ func main() {
 			0, 1, false)
 
 	// If there is a GPU, then add `GPU` and `GPU Temp` boxes
-	if gpuBox != nil {
+	if Nvidia {
 		fRow2.AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
 			AddItem(gpuBox, 0, 1, false).
 			AddItem(gpuTempBox, 0, 1, false),
@@ -76,14 +76,16 @@ func main() {
 	fMain.AddItem(fRow2, 0, 2, false)
 
 	// These functions are where all the boxes are drawn via Go Routines
-	go ui.UpdateSysInfoBox(app, sysInfoBox, RefreshInterval)
-	go ui.UpdateCpuBox(app, cpuBox, RefreshInterval)
-	go ui.UpdateMemBox(app, memBox, RefreshInterval)
-	go ui.UpdateProcBox(app, procsTbl, RefreshInterval, GroupProcesses)
-	go ui.UpdateCpuTempBox(app, cpuTempBox, RefreshInterval)
-	// netBox
-	// gpuBox
-	// gpuTempBox
+	go ui.UpdateSysInfoBox(app, sysInfoBox, UpdateInterval)
+	go ui.UpdateCpuBox(app, cpuBox, UpdateInterval)
+	go ui.UpdateMemBox(app, memBox, UpdateInterval)
+	go ui.UpdateProcBox(app, procsTbl, UpdateInterval)
+	go ui.UpdateCpuTempBox(app, cpuTempBox, UpdateInterval)
+	go ui.UpdateNetBox(app, netBox, UpdateInterval)
+	if Nvidia {
+		go ui.UpdateGpuBox(app, gpuBox, UpdateInterval)
+		go ui.UpdateGpuTempBox(app, gpuTempBox, UpdateInterval)
+	}
 
 	if err := app.SetRoot(fMain, true).SetFocus(procsTbl).Run(); err != nil {
 		panic(err)
