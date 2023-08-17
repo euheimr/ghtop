@@ -24,6 +24,9 @@ Subsequently, I had to draw a lot of my own widgets/primitives that would _other
 This project helped me a lot and pushed me to learn most of the features of Go.
 
 ## Install
+**Please note: Unicode (Braille characters) isn't supported on the old Windows console (`cmd` / `conhost.exe`)!**
+
+You can get the new Windows Terminal [here](https://github.com/microsoft/terminal/releases). (It's actually pretty nice, would recommend)
 
 - !TODO
 
