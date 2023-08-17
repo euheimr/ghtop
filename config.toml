@@ -1,8 +1,10 @@
 # Temperature units - C for Celsius, F for Fahrenheit
 TempScale="C"
 # Enable or disable grouping of processes - true or false
-GroupProcesses=false
+GroupProcesses=true
 # Set how frequently to update the UI (in milliseconds)
-UpdateInterval=700
+UpdateInterval=500
+# enable or disable gpu/nvidia tracking
+Nvidia=true
 # Set network IO to mbps if true
 mbps=false
