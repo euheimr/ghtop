@@ -73,10 +73,9 @@ func UpdateSysInfoBox(app *tview.Application, sysInfoBox *tview.TextView,
 			strconv.FormatInt(int64(cpuCores)*int64(cpuSockets), 10),
 		Threads: strconv.FormatInt(int64(cpuThreads), 10),
 	}
-	_, _, _, height := sysInfoBox.GetInnerRect()
 
 	for {
-		_, _, width, _ := sysInfoBox.GetInnerRect()
+		_, _, width, height := sysInfoBox.GetInnerRect()
 		hostnameLine := formatLine(width, "Hostname:", sysInfo.Hostname)
 		socketsCoresLine := formatLine(width, "Sockets/Cores:", sysInfo.SocketsCores)
 		threadsLine := formatLine(width, "Threads:", sysInfo.Threads)
