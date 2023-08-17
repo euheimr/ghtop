@@ -8,6 +8,7 @@ import (
 
 var cpuModelName = devices.CpuModelName()
 var cpuBoxLabel = "[ " + cpuModelName + " ]"
+var cpuTempBoxLabel = "[ CPU Temp ]"
 
 func UpdateCpuBox(app *tview.Application, cpuBox *tview.Box,
 	refresh time.Duration) {
@@ -17,9 +18,28 @@ func UpdateCpuBox(app *tview.Application, cpuBox *tview.Box,
 	for {
 		// TODO: get cpu data
 
-		time.Sleep(refresh)
+		time.Sleep(update)
 		app.QueueUpdateDraw(func() {
 
 		})
+	}
+}
+
+func UpdateCpuTempBox(app *tview.Application, cpuTempBox *tview.Box,
+	update time.Duration) {
+
+	cpuTempBox.SetBorder(true).SetTitle(cpuTempBoxLabel)
+
+	for {
+		// TODO: get cpu temp data
+
+		time.Sleep(update)
+		app.QueueUpdateDraw(func() {
+			// TODO: draw the braille graph
+
+			// TODO: draw the temp data text below the graph
+
+		})
+
 	}
 }
