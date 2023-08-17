@@ -63,26 +63,30 @@ func GetProcs(group bool) ([]Process, error) {
 	for i, proc := range processes {
 		pid := proc.Pid
 		user, err := proc.Username()
+		if err != nil {
+			//log.Println(util.GetFuncName(), err.Error())
+			continue
+		}
 		// Windows only - Cut out the user Group names
 		_, user, _ = strings.Cut(user, "\\")
 		if err != nil {
-			//log.Println(utils.GetFuncName(), ":", err.Error())
+			//log.Println(util.GetFuncName(), err.Error())
 			continue
 		}
 		name, err := proc.Name()
 		name, _, _ = strings.Cut(name, ".exe")
 		if err != nil {
-			//log.Println(utils.GetFuncName(), ":", err.Error())
+			//log.Println(util.GetFuncName(), err.Error())
 			continue
 		}
 		cpu, err := proc.CPUPercent()
 		if err != nil {
-			//log.Println(utils.GetFuncName(), ":", err.Error())
+			//log.Println(util.GetFuncName(), err.Error())
 			continue
 		}
 		mem, err := proc.MemoryPercent()
 		if err != nil {
-			//log.Println(utils.GetFuncName(), ":", err.Error())
+			//log.Println(util.GetFuncName(), err.Error())
 			continue
 		}
 		if int(pid) > 0 {
@@ -90,7 +94,7 @@ func GetProcs(group bool) ([]Process, error) {
 				Pid:  int(pid),
 				User: user,
 				Name: name,
-				Cpu:  float64(cpu),
+				Cpu:  cpu,
 				Mem:  float64(mem),
 			}
 		}
