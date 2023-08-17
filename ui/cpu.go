@@ -11,7 +11,7 @@ var cpuBoxLabel = "[ " + cpuModelName + " ]"
 var cpuTempBoxLabel = "[ CPU Temp ]"
 
 func UpdateCpuBox(app *tview.Application, cpuBox *tview.Box,
-	refresh time.Duration) {
+	update time.Duration) {
 
 	cpuBox.SetBorder(true).SetTitle(cpuBoxLabel)
 

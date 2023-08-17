@@ -8,12 +8,12 @@ import (
 var memBoxLabel = "[ Memory ]"
 
 func UpdateMemBox(app *tview.Application, memBox *tview.Box,
-	refresh time.Duration) {
+	update time.Duration) {
 
 	for {
 		// TODO: get memory data and return it with the box
 
-		time.Sleep(refresh)
+		time.Sleep(update)
 		app.QueueUpdateDraw(func() {
 			// TODO: draw the braille graph
 

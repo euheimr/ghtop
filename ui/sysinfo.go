@@ -55,7 +55,7 @@ func tickCycleSymbol(tick string) string {
 }
 
 func UpdateSysInfoBox(app *tview.Application, sysInfoBox *tview.TextView,
-	refresh time.Duration) {
+	update time.Duration) {
 
 	// Get Sysinfo data - this isn't in the for loop because this doesn't change
 	//	during the lifetime of the program, thus we only get it once
@@ -80,7 +80,7 @@ func UpdateSysInfoBox(app *tview.Application, sysInfoBox *tview.TextView,
 		socketsCoresLine := formatLine(width, "Sockets/Cores:", sysInfo.SocketsCores)
 		threadsLine := formatLine(width, "Threads:", sysInfo.Threads)
 
-		refreshLine := formatLine(width, "Refresh rate:", strconv.FormatInt(int64(refresh/time.Millisecond), 10)+"ms")
+		refreshLine := formatLine(width, "Refresh rate:", strconv.FormatInt(int64(update/time.Millisecond), 10)+"ms")
 		tick = tickCycleSymbol(tick)
 
 		// we want the number of processes updated, unlike the rest of the
@@ -88,7 +88,7 @@ func UpdateSysInfoBox(app *tview.Application, sysInfoBox *tview.TextView,
 		//	of processes with each draw
 		hostInfo, _ = host.Info()
 
-		time.Sleep(refresh)
+		time.Sleep(update)
 		app.QueueUpdateDraw(func() {
 
 			procsCount := strconv.FormatInt(int64(hostInfo.Procs), 10)
