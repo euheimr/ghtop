@@ -65,13 +65,14 @@ func UpdateSysInfoBox(app *tview.Application, sysInfoBox *tview.TextView,
 	var cpuCores = devices.CpuCores()
 	var cpuThreads = devices.CpuThreads()
 
+	sysInfoBox.SetBorder(true).SetTitle(sysInfoLabel)
+
 	sysInfo := &SysInfo{
 		Hostname: hostInfo.Hostname,
 		SocketsCores: strconv.FormatInt(int64(cpuSockets), 10) + "/" +
 			strconv.FormatInt(int64(cpuCores)*int64(cpuSockets), 10),
 		Threads: strconv.FormatInt(int64(cpuThreads), 10),
 	}
-	sysInfoBox.SetBorder(true).SetTitle(sysInfoLabel)
 	_, _, _, height := sysInfoBox.GetInnerRect()
 
 	for {
