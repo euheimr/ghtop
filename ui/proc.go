@@ -30,6 +30,7 @@ type ProcTblCol struct {
 	Gpu  *ProcTbl
 }
 
+const ProcBoxLabel = "[ Processes ]"
 const (
 	SortPid  ProcSortMethod = "p"
 	SortUser                = "u"
@@ -48,7 +49,7 @@ const (
 var groupProcesses = util.Config.GroupProcesses
 
 var (
-	procBoxLabel  = "[ Processes ]"
+	processes      []devices.Process
 	processes     []devices.Process
 	procs         []devices.Process
 	SortMethod    ProcSortMethod
@@ -156,7 +157,7 @@ func UpdateProcBox(app *tview.Application, procsTbl *tview.Table,
 		SetSelectable(false, true).
 		SetEvaluateAllRows(true).
 		SetBorder(true).
-		SetTitle(procBoxLabel)
+		SetTitle(ProcBoxLabel)
 
 	// Set the default sort direction and selected cell (CPU%, descending)
 	procsTbl.Select(0, 3)
