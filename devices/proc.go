@@ -16,6 +16,7 @@ type Process struct {
 }
 
 var _procs []Process
+var formatMemPercent bool = util.Config.FormatMemAsPercent
 
 func groupProcs(procs []Process) []Process {
 	// Create a map of unique processes and use Pid as a counter of the same

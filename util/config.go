@@ -9,10 +9,11 @@ import (
 )
 
 type configVars struct {
-	UpdateInterval time.Duration
-	GroupProcesses bool
-	TempScale      string
-	Nvidia         bool
+	UpdateInterval     time.Duration
+	GroupProcesses     bool
+	TempScale          string
+	FormatMemAsPercent bool
+	EnableNvidia       bool
 	//mbps           bool
 }
 
@@ -22,10 +23,11 @@ func init() {
 	cfg := readConfig()
 
 	Config = &configVars{
-		UpdateInterval: cfg.Duration("UpdateInterval"),
-		GroupProcesses: cfg.Bool("GroupProcesses"),
-		TempScale:      cfg.String("TempScale"),
-		Nvidia:         cfg.Bool("Nvidia"),
+		UpdateInterval:     cfg.Duration("UpdateInterval"),
+		GroupProcesses:     cfg.Bool("GroupProcesses"),
+		TempScale:          cfg.String("TempScale"),
+		EnableNvidia:       cfg.Bool("EnableNvidia"),
+		FormatMemAsPercent: cfg.Bool("FormatMemoryAsPercent"),
 		//mbps:           cfg.Bool("mbps"),
 	}
 }

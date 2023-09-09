@@ -2,9 +2,11 @@
 TempScale="C"
 # Enable or disable grouping of processes - true or false
 GroupProcesses=true
-# Set how frequently to update the UI (in milliseconds)
+# Set how frequently to update the UI (in milliseconds - 1000ms equals 1 second)
 UpdateInterval=500
+# Format memory values in the Processes table as Percent instead of in Gigabytes
+FormatMemoryAsPercent=true
 # enable or disable gpu/nvidia tracking
-Nvidia=true
+EnableNvidia=true
 # Set network IO to mbps if true
 mbps=false
