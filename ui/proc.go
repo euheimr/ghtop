@@ -162,18 +162,6 @@ func UpdateProcBox(app *tview.Application, procsTbl *tview.Table,
 	procsTbl.Select(0, 3)
 
 	for {
-
-		//procs = sortProcs(processes, SortDirection, SortMethod)
-
-		//switch SortDirection {
-		//case SortAsc:
-		//	SortDirection = SortDesc
-		//case SortDesc:
-		//	SortDirection = SortAsc
-		//}
-
-		//procsTbl.GetMouseCapture()
-
 		time.Sleep(update)
 		// We want to keep the amount of rows scrolled down then set it last
 		//	after everything is drawn.
