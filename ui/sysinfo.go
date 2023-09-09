@@ -28,8 +28,7 @@ type SysInfo struct {
 	Threads      string
 }
 
-func formatLine(lineWidth int, title string, info string) string {
-func tickCycleSymbol(tick string) string {
+func incrementTickSymbol(tick string) string {
 	if tick == "" {
 		return tickSymbols[0]
 	} else if tick == tickSymbols[0] {
@@ -94,8 +93,7 @@ func UpdateSysInfoBox(app *tview.Application, sysInfoBox *tview.TextView,
 		refreshLine := formatLine(width, RefreshRateLabel,
 			strconv.FormatInt(int64(update/time.Millisecond), 10)+"ms")
 
-		refreshLine := formatLine(width, "Refresh rate:", strconv.FormatInt(int64(update/time.Millisecond), 10)+"ms")
-		tick = tickCycleSymbol(tick)
+		tick = incrementTickSymbol(tick)
 
 		// we want the number of processes updated, unlike the rest of the
 		//	system info, so we call host.Info() again to update the number
