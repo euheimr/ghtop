@@ -1,22 +1,17 @@
 package main
 
-// github.com/shirou/gopsutil
-// github.com/rivo/tview
-// github.com/gdamore/tcell
-
 import (
 	"github.com/euheimr/ghtop/ui"
 	"github.com/euheimr/ghtop/util"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"log"
 	"time"
 )
 
 var UpdateInterval = util.Config.UpdateInterval * time.Millisecond
-var GroupProcesses = util.Config.GroupProcesses
-var Nvidia = util.Config.Nvidia
+var EnableNvidia = util.Config.EnableNvidia
 
+//var GroupProcesses = util.Config.GroupProcesses
 //var TempScale = util.Config.TempScale
 
 var (
@@ -25,11 +20,16 @@ var (
 )
 
 func main() {
-	screen, err := tcell.NewScreen()
-	if err != nil {
-		log.Fatalf("[%s] Failed to initialize tcell.NewScreen(): %v",
-			util.GetFuncName(), err)
-	}
+	// Check if admin ... if not let the user know
+	//util.GetAdmin()
+
+	// Setup the screen/terminal area
+	screen, _ := tcell.NewScreen()
+	//if err != nil {
+	//	log.Fatalf("[%s] Failed to initialize tcell.NewScreen(): %v",
+	//		util.GetFuncName(), sErr)
+	//}
+
 	// fMain is the main box drawn to the screen. It holds all the other boxes
 	//	within it.
 	fMain = tview.NewFlex().SetDirection(tview.FlexRow)
@@ -65,7 +65,7 @@ func main() {
 			0, 1, false)
 
 	// If there is a GPU, then add `GPU` and `GPU Temp` boxes
-	if Nvidia {
+	if EnableNvidia {
 		fRow2.AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
 			AddItem(gpuBox, 0, 1, false).
 			AddItem(gpuTempBox, 0, 1, false),
@@ -82,7 +82,7 @@ func main() {
 	go ui.UpdateProcBox(app, procsTbl, UpdateInterval)
 	go ui.UpdateCpuTempBox(app, cpuTempBox, UpdateInterval)
 	go ui.UpdateNetBox(app, netBox, UpdateInterval)
-	if Nvidia {
+	if EnableNvidia {
 		go ui.UpdateGpuBox(app, gpuBox, UpdateInterval)
 		go ui.UpdateGpuTempBox(app, gpuTempBox, UpdateInterval)
 	}
