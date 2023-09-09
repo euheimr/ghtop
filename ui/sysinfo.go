@@ -5,12 +5,22 @@ import (
 	"github.com/rivo/tview"
 	"github.com/shirou/gopsutil/v3/host"
 	"strconv"
+	"strings"
 	"time"
 )
 
-var sysInfoLabel = "[ System Info ]"
-var tickSymbols = [10]string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+const SysInfoLabel string = "[ System Info ]"
+const (
+	HostnameLabel     string = "Hostname:"
+	SocketsCoresLabel        = "Sockets/Cores:"
+	ThreadsLabel             = "Threads:"
+	RefreshRateLabel         = "Refresh rate:"
+	ProcessesLabel           = "Processes:"
+	TickLabel                = "Tick:"
+)
+
 var tick string
+var tickSymbols = [10]string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
 type SysInfo struct {
 	Hostname     string
@@ -19,14 +29,6 @@ type SysInfo struct {
 }
 
 func formatLine(lineWidth int, title string, info string) string {
-	spaces := ""
-	spacing := lineWidth - len(title+info)
-	for i := 0; i < spacing; i++ {
-		spaces += " "
-	}
-	return title + spaces + info
-}
-
 func tickCycleSymbol(tick string) string {
 	if tick == "" {
 		return tickSymbols[0]
@@ -54,6 +56,15 @@ func tickCycleSymbol(tick string) string {
 	return tick
 }
 
+func formatLine(lineWidth int, title string, info string) string {
+	spaces := ""
+	spacing := lineWidth - len(title+info)
+	for i := 0; i < spacing; i++ {
+		spaces += " "
+	}
+	return title + spaces + info
+}
+
 func UpdateSysInfoBox(app *tview.Application, sysInfoBox *tview.TextView,
 	update time.Duration) {
 
@@ -65,10 +76,10 @@ func UpdateSysInfoBox(app *tview.Application, sysInfoBox *tview.TextView,
 	var cpuCores = devices.CpuCores()
 	var cpuThreads = devices.CpuThreads()
 
-	sysInfoBox.SetBorder(true).SetTitle(sysInfoLabel)
+	sysInfoBox.SetBorder(true).SetTitle(SysInfoLabel)
 
 	sysInfo := &SysInfo{
-		Hostname: hostInfo.Hostname,
+		Hostname: strings.Split(hostInfo.Hostname, ".")[0],
 		SocketsCores: strconv.FormatInt(int64(cpuSockets), 10) + "/" +
 			strconv.FormatInt(int64(cpuCores)*int64(cpuSockets), 10),
 		Threads: strconv.FormatInt(int64(cpuThreads), 10),
@@ -76,9 +87,12 @@ func UpdateSysInfoBox(app *tview.Application, sysInfoBox *tview.TextView,
 
 	for {
 		_, _, width, height := sysInfoBox.GetInnerRect()
-		hostnameLine := formatLine(width, "Hostname:", sysInfo.Hostname)
-		socketsCoresLine := formatLine(width, "Sockets/Cores:", sysInfo.SocketsCores)
-		threadsLine := formatLine(width, "Threads:", sysInfo.Threads)
+
+		hostnameLine := formatLine(width, HostnameLabel, sysInfo.Hostname)
+		socketsCoresLine := formatLine(width, SocketsCoresLabel, sysInfo.SocketsCores)
+		threadsLine := formatLine(width, ThreadsLabel, sysInfo.Threads)
+		refreshLine := formatLine(width, RefreshRateLabel,
+			strconv.FormatInt(int64(update/time.Millisecond), 10)+"ms")
 
 		refreshLine := formatLine(width, "Refresh rate:", strconv.FormatInt(int64(update/time.Millisecond), 10)+"ms")
 		tick = tickCycleSymbol(tick)
@@ -92,8 +106,8 @@ func UpdateSysInfoBox(app *tview.Application, sysInfoBox *tview.TextView,
 		app.QueueUpdateDraw(func() {
 
 			procsCount := strconv.FormatInt(int64(hostInfo.Procs), 10)
-			procsLine := formatLine(width, "Processes:", procsCount)
-			tickLine := formatLine(width, "Tick:", tick)
+			procsLine := formatLine(width, ProcessesLabel, procsCount)
+			tickLine := formatLine(width, TickLabel, tick)
 
 			sysInfoText := hostnameLine + "\n" +
 				socketsCoresLine + "\n" +
