@@ -24,11 +24,35 @@ Subsequently, I had to draw a lot of my own widgets/primitives that would _other
 This project helped me a lot and pushed me to learn most of the features of Go.
 
 ## Install
+If you're on windows, the new windows terminal is packaged with this application under the `terminal` directory.
+This is executed in the end to start `ghtop`.
+
 **Please note: Unicode (Braille characters) isn't supported on the old Windows console (`cmd` / `conhost.exe`)!**
 
-You can get the new Windows Terminal [here](https://github.com/microsoft/terminal/releases). (It's actually pretty nice, would recommend)
 
-- !TODO
+1. !todo: Download & Install from [Releases]()
+
+  **OR:** 
+
+2. Build it yourself
+
+   a. Windows
+      
+      1. `cmd` or `conhost.exe`:
+   
+       build.bat && install.bat
+
+      2. `Powershell`:
+       build.bat; install.bat
+
+   b. Linux & MacOS
+
+       build.sh
+
+3. Install & Add to path
+
+       install.sh
+
 
 ## Built With:
 
@@ -43,5 +67,5 @@ You can get the new Windows Terminal [here](https://github.com/microsoft/termina
 ### Design Mockup
 
 <div>
-<img src="./assets/ghtop.png" alt="design mockup"/>
+<img src="./docs/ghtop.png" alt="design mockup"/>
 </div>
