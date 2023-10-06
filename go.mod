@@ -8,7 +8,7 @@ require (
 	github.com/knadh/koanf/providers/file v0.1.0
 	github.com/knadh/koanf/v2 v2.0.1
 	github.com/rivo/tview v0.0.0-20230621164836-6cc0565babaf
-	github.com/shirou/gopsutil/v3 v3.23.7
+	github.com/shirou/gopsutil/v3 v3.23.8
 )
 
 require (
