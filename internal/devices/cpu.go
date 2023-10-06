@@ -1,7 +1,7 @@
 package devices
 
 import (
-	"github.com/euheimr/ghtop/internal/app/common"
+	"github.com/euheimr/ghtop/internal"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"log"
 	"strings"
@@ -31,7 +31,7 @@ func init() {
 	if CpuInfo == nil {
 		info, err := cpu.Info()
 		if err != nil {
-			log.Fatal(common.GetFuncName(), "Could not get cpu.Info() - ", err.Error())
+			log.Fatal(internal.GetFuncName(), "Could not get cpu.Info() - ", err.Error())
 		}
 		cores, _ := cpu.Counts(false)
 
@@ -64,7 +64,7 @@ func getCpuInfo() {
 	if CpuInfo == nil {
 		info, err := cpu.Info()
 		if err != nil {
-			log.Fatal(common.GetFuncName(), "Could not get cpu.Info() - ", err.Error())
+			log.Fatal(internal.GetFuncName(), "Could not get cpu.Info() - ", err.Error())
 		}
 		cores, _ := cpu.Counts(false)
 
