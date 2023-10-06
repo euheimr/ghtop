@@ -1,12 +1,15 @@
-# Temperature units - C for Celsius, F for Fahrenheit
-TempScale="C"
+Debug=true
+IsProduction=false
+
+# Temperature units - `C` or `c` for Celsius, `F` or `f` for Fahrenheit
+TempScale="f"
 # Enable or disable grouping of processes - true or false
 GroupProcesses=true
 # Set how frequently to update the UI (in milliseconds - 1000ms equals 1 second)
-UpdateInterval=500
+UpdateInterval=100
 # Format memory values in the Processes table as Percent instead of in Gigabytes
 FormatMemoryAsPercent=true
 # enable or disable gpu/nvidia tracking
 EnableNvidia=true
 # Set network IO to mbps if true
-mbps=false
+#mbps=false
