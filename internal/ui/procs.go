@@ -1,8 +1,8 @@
 package ui
 
 import (
-	"github.com/euheimr/ghtop/internal/app/common"
-	"github.com/euheimr/ghtop/internal/app/devices"
+	"github.com/euheimr/ghtop/internal"
+	"github.com/euheimr/ghtop/internal/devices"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"math"
@@ -43,7 +43,7 @@ const (
 )
 
 var (
-	cfg                *common.ConfigVars
+	cfg                *internal.ConfigVars
 	sortColumn         int
 	sortColumnPrevious int
 	sortDescending     bool
@@ -54,7 +54,7 @@ var (
 )
 
 func init() {
-	cfg = &common.Config
+	cfg = &internal.Config
 	sortColumn = devices.Cpu
 	sortDescending = true
 

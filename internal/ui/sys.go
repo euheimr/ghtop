@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/euheimr/ghtop/internal/app/devices"
+	"github.com/euheimr/ghtop/internal/devices"
 	"github.com/rivo/tview"
 	"github.com/shirou/gopsutil/v3/host"
 	"strconv"

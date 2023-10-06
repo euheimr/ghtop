@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/euheimr/ghtop/internal/app/common"
-	"github.com/euheimr/ghtop/internal/app/ui"
+	"github.com/euheimr/ghtop/internal"
+	"github.com/euheimr/ghtop/internal/ui"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"os"
@@ -32,20 +32,20 @@ type ModulesMain struct {
 
 type State struct {
 	app          *tview.Application
-	cfg          *common.ConfigVars
+	cfg          *internal.ConfigVars
 	selectedView int
 	views        []*tview.Flex
 	//defaultView  int
 }
 
 var AppState *State
-var Log = *common.Logger
+var Log = *internal.Logger
 
 func init() {
 	// Setup the initial state for ghtop
 	AppState = &State{
 		app:          tview.NewApplication(),
-		cfg:          &common.Config,
+		cfg:          &internal.Config,
 		selectedView: 0,
 		views: []*tview.Flex{
 			//	>flexMain holds all the other boxes within it.<
