@@ -7,7 +7,7 @@ import (
 
 var netBoxLabel = "[ Network ]"
 
-func UpdateNetBox(app *tview.Application, netBox *tview.Box,
+func UpdateNet(app *tview.Application, netBox *tview.Box,
 	update time.Duration) {
 
 	netBox.SetBorder(true).SetTitle(netBoxLabel)
