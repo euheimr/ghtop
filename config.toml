@@ -1,5 +1,5 @@
 Debug=true
-IsProduction=false
+# Set how frequently to update the UI (in milliseconds - 1000ms equals 1 second)
 
 # Temperature units - `C` or `c` for Celsius, `F` or `f` for Fahrenheit
 TempScale="f"
@@ -8,8 +8,7 @@ GroupProcesses=true
 # Set how frequently to update the UI (in milliseconds - 1000ms equals 1 second)
 UpdateInterval=100
 # Format memory values in the Processes table as Percent instead of in Gigabytes
-FormatMemoryAsPercent=true
-# enable or disable gpu/nvidia tracking
-EnableNvidia=true
+#FormatMemoryAsPercent=true
+
 # Set network IO to mbps if true
 #mbps=false

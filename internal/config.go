@@ -45,7 +45,7 @@ func updateConfigVars(cfg *koanf.Koanf) bool {
 
 	Config = ConfigVars{
 		Debug:              cfg.Bool("Debug"),
-		IsProduction:       cfg.Bool("IsProduction"),
+		UpdateInterval:        cfg.Duration("UpdateInterval") * time.Millisecond,
 		UpdateInterval:     cfg.Duration("UpdateInterval") * time.Millisecond,
 		GroupProcesses:     cfg.Bool("GroupProcesses"),
 		TempScale:          tempScale,
