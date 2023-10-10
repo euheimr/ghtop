@@ -1,6 +1,9 @@
 package devices
 
 import (
+	"fmt"
+	"github.com/euheimr/ghtop/internal"
+	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/process"
 	"sort"
 	"strings"
@@ -65,7 +68,7 @@ func SortProcs(processes []Process, sortColumn int, sortDescending bool) ([]Proc
 func GetProcs(group bool) ([]Process, error) {
 	var (
 		pid  int32
-		user string
+		usr  string
 		exec string
 		cpu  float64
 		mem  float32
@@ -76,9 +79,11 @@ func GetProcs(group bool) ([]Process, error) {
 
 	for i, proc := range processes {
 		pid = proc.Pid
-		user, _ = proc.Username()
+		usr, _ = proc.Username()
 		// Windows only - Cut out the user Group names
-		_, user, _ = strings.Cut(user, "\\")
+		if strings.Contains(usr, "\\") {
+			_, usr, _ = strings.Cut(usr, "\\")
+		}
 
 		exec, _ = proc.Name()
 		exec, _, _ = strings.Cut(exec, ".exe")
@@ -98,10 +103,22 @@ func GetProcs(group bool) ([]Process, error) {
 
 		mem, _ = proc.MemoryPercent()
 
-		if int(pid) > 0 {
+		//u, _ := user.Current()
+
+		if internal.Config.ShowOnlyUserProcesses {
+			if usr == SystemInfo.User {
+				Procs[i] = Process{
+					Pid:  int(pid),
+					User: usr,
+					Name: exec,
+					Cpu:  float64(cpu),
+					Mem:  float64(mem),
+				}
+			}
+		} else {
 			Procs[i] = Process{
 				Pid:  int(pid),
-				User: user,
+				User: usr,
 				Name: exec,
 				Cpu:  float64(cpu),
 				Mem:  float64(mem),
@@ -110,8 +127,6 @@ func GetProcs(group bool) ([]Process, error) {
 	}
 
 	if group {
-		//Procs = groupProcs(Procs)
-
 		// Create a map of unique processes and use Pid as a counter of the same
 		//	processes. CPU and Memory are added for each process with the same name
 		var uniqueProcsMap = make(map[string]Process)
