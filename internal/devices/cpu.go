@@ -4,6 +4,7 @@ import (
 	"github.com/euheimr/ghtop/internal"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"log"
+	"log/slog"
 	"strings"
 )
 
@@ -57,6 +58,7 @@ func init() {
 			Percent:   0.34,
 		}
 	}
+	slog.Debug("Init CpuInfo (devices/cpu.go)")
 
 }
 
@@ -64,7 +66,7 @@ func getCpuInfo() {
 	if CpuInfo == nil {
 		info, err := cpu.Info()
 		if err != nil {
-			log.Fatal(internal.GetFuncName(), "Could not get cpu.Info() - ", err.Error())
+			slog.Error(internal.GetFuncName(), "Could not get cpu.Info() - ", err.Error())
 		}
 		cores, _ := cpu.Counts(false)
 
