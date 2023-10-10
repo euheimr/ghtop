@@ -1,120 +1,154 @@
 package ui
 
 import (
+	"github.com/euheimr/ghtop/internal"
 	"github.com/euheimr/ghtop/internal/devices"
 	"github.com/rivo/tview"
-	"github.com/shirou/gopsutil/v3/host"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
 
 const SysInfoLabel string = "[ System Info ]"
+
 const (
-	HostnameLabel     string = "Hostname:"
-	SocketsCoresLabel        = "Sockets/Cores:"
-	ThreadsLabel             = "Threads:"
-	RefreshRateLabel         = "Refresh rate:"
-	ProcessesLabel           = "Processes:"
-	TickLabel                = "Tick:"
+	BLACK  = "[black]"
+	BLUE   = "[blue]"
+	GREEN  = "[green]"
+	RED    = "[red]"
+	WHITE  = "[white]"
+	YELLOW = "[yellow]"
+	GRAY   = "[gray]"
 )
 
-type SysInfo struct {
-	Hostname     string
-	SocketsCores string
-	Threads      string
-}
+const (
+	HostnameLabel     string = GRAY + "Hostname" + WHITE
+	UserLabel                = GRAY + "User" + WHITE
+	SocketsCoresLabel        = GRAY + "Soc/Cores" + WHITE
+	ThreadsLabel             = GRAY + "Threads" + WHITE
+	RefreshRateLabel         = YELLOW + "Refresh" + WHITE
+	ProcessesLabel           = YELLOW + "Processes" + WHITE
+	DebugLabel               = RED + "DEBUG" + WHITE
+	TickLabel                = YELLOW + "Tick" + WHITE
+	WidthHeightLabel         = "w*h"
+)
 
 type Tick struct {
-	SymbolIndex int
-	Symbols     []string
+	Index   int
+	Symbols []string
 }
 
+// var SystemInfo *SysInfo
 var tick *Tick
 
 func init() {
 	tick = &Tick{
-		SymbolIndex: 0,
-		Symbols:     []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
+		Index:   0,
+		Symbols: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
 		//Symbols: []string{"-", "-", "+", "*", "*", "/", "\\"},
 	}
 }
 
 func incrementTickSymbol() int {
 	for i, _ := range tick.Symbols {
-		if tick.SymbolIndex == 0 {
-			tick.SymbolIndex++
-			return tick.SymbolIndex
-		} else if tick.SymbolIndex == len(tick.Symbols)-1 {
-			tick.SymbolIndex = 0
-			return tick.SymbolIndex
-		} else if tick.SymbolIndex == i {
-			tick.SymbolIndex++
-			return tick.SymbolIndex
+		if tick.Index == 0 {
+			tick.Index++
+			return tick.Index
+		} else if tick.Index == len(tick.Symbols)-1 {
+			tick.Index = 0
+			return tick.Index
+		} else if tick.Index == i {
+			tick.Index++
+			return tick.Index
 		}
 	}
-	return tick.SymbolIndex
+	return tick.Index
 }
 
-func formatLine(lineWidth int, title string, info string) string {
-	spaces := ""
-	spacing := lineWidth - len(title+info)
-	for i := 0; i < spacing; i++ {
-		spaces += " "
+func getSpacingOffset(str string) int {
+	rgx, _ := regexp.Compile(`\[\w*]`)
+	colorTags := rgx.FindAll([]byte(str), -1)
+	if colorTags != nil {
+		var s string
+		for i := range colorTags {
+			s = strings.ReplaceAll(str, string(colorTags[i]), "")
+		}
+
+		colorTags = rgx.FindAll([]byte(s), -1)
+		for i := range colorTags {
+			s = strings.ReplaceAll(s, string(colorTags[i]), "")
+		}
+		return len(s)
 	}
-	return title + spaces + info
+	return len(str)
 }
 
-func UpdateSysInfo(app *tview.Application, sysInfoBox *tview.TextView,
+func formatLineSpacing(lineWidth int, title string, info string) string {
+	var spaces string
+
+	titleOffset := getSpacingOffset(title)
+	infoOffset := getSpacingOffset(info)
+	spacing := lineWidth - (titleOffset + infoOffset)
+
+	for i := 0; i < spacing; i++ {
+		spaces += "."
+	}
+	return title + spaces + info + "\n"
+}
+
+func UpdateSysInfo(app *tview.Application, sysInfo *tview.TextView,
 	update time.Duration) {
 
-	// Get Sysinfo data - this isn't in the for loop because this doesn't change
-	//	during the lifetime of the program, thus we only get it once
-	var hostInfo, _ = host.Info()
-	var cpus = devices.CpuInfo
-	// these variables grab info using functions defined in devices/cpu.go
-
-	sysInfoBox.SetBorder(true).SetTitle(SysInfoLabel)
-
-	sysInfo := &SysInfo{
-		Hostname: strings.Split(hostInfo.Hostname, ".")[0],
-		SocketsCores: strconv.FormatInt(int64(len(cpus)), 10) + "/" +
-			strconv.FormatInt(int64(cpus[0].Cores)*int64(len(cpus)), 10),
-		Threads: strconv.FormatInt(int64(cpus[0].Threads), 10),
-	}
+	sysInfo.SetBorder(true).SetTitle(SysInfoLabel)
+	sysInfo.SetDynamicColors(true)
 
 	for {
-		_, _, width, height := sysInfoBox.GetInnerRect()
+		_, _, width, height := sysInfo.GetInnerRect()
 
-		hostnameLine := formatLine(width, HostnameLabel, sysInfo.Hostname)
-		socketsCoresLine := formatLine(width, SocketsCoresLabel, sysInfo.SocketsCores)
-		threadsLine := formatLine(width, ThreadsLabel, sysInfo.Threads)
-		refreshLine := formatLine(width, RefreshRateLabel,
+		hostnameLine := formatLineSpacing(width, HostnameLabel, devices.SystemInfo.Hostname)
+		userLine := formatLineSpacing(width, UserLabel, devices.SystemInfo.User)
+		socketsCoresLine := formatLineSpacing(width, SocketsCoresLabel, devices.SystemInfo.SocketsCores)
+		threadsLine := formatLineSpacing(width, ThreadsLabel, devices.SystemInfo.Threads)
+		refreshLine := formatLineSpacing(width, RefreshRateLabel,
 			strconv.FormatInt(int64(update/time.Millisecond), 10)+"ms")
+		debugLine := formatLineSpacing(width, DebugLabel, strconv.FormatBool(internal.Config.Debug))
+		widthHeightLine := formatLineSpacing(width, WidthHeightLabel,
+			strconv.FormatInt(int64(width), 10)+"*"+
+				strconv.FormatInt(int64(height), 10))
 
-		// we want the number of processes updated, unlike the rest of the
-		//	system info, so we call host.Info() again to update the number
-		//	of processes with each draw
-		hostInfo, _ = host.Info()
+		var dividerLine string
+		middle := (width / 2) - 1
+		for i := 0; i <= (middle); i++ {
+			dividerLine += " "
+			if i == middle {
+				dividerLine += "-\n"
+			}
+		}
+
+		//procsCnt, _ := devices.GetProcsCount()
+		//procsCount := strconv.FormatInt(procsCnt, 10)
+		// Keep updating the procsCount
+		//procsCntLine := formatLineSpacing(width, ProcessesLabel, procsCount)
 
 		time.Sleep(update)
-
 		app.QueueUpdateDraw(func() {
-			procsCount := strconv.FormatInt(int64(hostInfo.Procs), 10)
-			procsLine := formatLine(width, ProcessesLabel, procsCount)
-			tickLine := formatLine(width, TickLabel, tick.Symbols[tick.SymbolIndex])
-			tick.SymbolIndex = incrementTickSymbol()
+			tickLine := formatLineSpacing(width, TickLabel, tick.Symbols[tick.Index])
+			tick.Index = incrementTickSymbol()
 
-			sysInfoText := hostnameLine + "\n" +
-				socketsCoresLine + "\n" +
-				threadsLine + "\n" +
-				procsLine + "\n" +
-				"\n" +
-				refreshLine + "\n" +
-				tickLine + "\n" +
-				strconv.FormatInt(int64(height), 10)
+			sysInfoText := hostnameLine +
+				userLine +
+				socketsCoresLine +
+				threadsLine +
+				dividerLine +
+				//procsCntLine +
+				refreshLine +
+				tickLine +
+				dividerLine +
+				widthHeightLine +
+				debugLine
 
-			sysInfoBox.SetText(sysInfoText)
+			sysInfo.SetText(sysInfoText)
 		})
 	}
 }
