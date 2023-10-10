@@ -161,3 +161,12 @@ func GetProcs(group bool) ([]Process, error) {
 	}
 	return Procs, nil
 }
+
+func GetProcsCount() (int64, error) {
+	hostInfo, err := host.Info()
+	if err != nil {
+		fmt.Println("Could not get host.Info() !!")
+		return 0, err
+	}
+	return int64(hostInfo.Procs), nil
+}
