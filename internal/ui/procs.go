@@ -29,114 +29,143 @@ type Header struct {
 }
 
 const (
-	PROCS_LABEL       string      = "[ Processes ]"
-	HEADER_TEXT_COLOR tcell.Color = tcell.ColorYellow
-	HEADER_BKGD_COLOR             = tcell.ColorRed
-	HEADER_ALIGN      int         = tview.AlignCenter
-	HEADER_PID_LABEL  string      = "PID"
-	HEADER_CNT_LABEL              = "CNT"
-	HEADER_USER_LABEL             = "USER"
-	HEADER_EXEC_LABEL             = "EXEC"
-	HEADER_CPU_LABEL              = "CPU%"
-	HEADER_MEM_LABEL              = "MEM%"
+	ColumnTextColorSelected     tcell.Color = tcell.ColorYellow
+	HeaderTextColor                         = tcell.ColorWhite
+	HeaderTextBkgdColor                     = tcell.ColorRed
+	HeaderTextColorSelected                 = tcell.ColorBlue
+	HeaderTextBkgdColorSelected             = tcell.ColorWhite
+	HeaderAlign                 int         = tview.AlignCenter
+	HeaderPidLabel              string      = "PID"
+	HeaderCntLabel                          = "CNT"
+	HeaderUserLabel                         = "USER"
+	HeaderExecLabel                         = "EXEC"
+	HeaderCpuLabel                          = "CPU%"
+	HeaderMemLabel                          = "MEM%"
 	//HEADER_GPU_LABEL              = "GPU%"
+
+	HeaderFormatBlink        = "[::l]"
+	HeaderFormatReverseColor = "[::r]"
 )
+
+const DownArrow string = "▼" // descending
+const UpArrow = "▲"          // ascending
+
+var procsLabel = "Processes"
+var baseHeader = Header{
+	Pid: HeaderAttr{HeaderPidLabel, HeaderAlign,
+		HeaderTextColor, HeaderTextBkgdColor,
+		3, 4},
+	User: HeaderAttr{HeaderUserLabel, HeaderAlign,
+		HeaderTextColor, HeaderTextBkgdColor,
+		5, 8},
+	Exec: HeaderAttr{HeaderExecLabel, HeaderAlign,
+		HeaderTextColor, HeaderTextBkgdColor,
+		12, 16},
+	Cpu: HeaderAttr{HeaderCpuLabel, HeaderAlign,
+		HeaderTextColor, HeaderTextBkgdColor,
+		4, 4},
+	Mem: HeaderAttr{HeaderMemLabel, HeaderAlign,
+		HeaderTextColor, HeaderTextBkgdColor,
+		4, 4},
+	//Gpu: HeaderAttr{HEADER_GPU_LABEL, HEADER_ALIGN,
+	//  HEADER_TEXT_COLOR, HEADER_BKGD_COLOR,
+	//	4, 4},
+}
 
 var (
 	cfg                *internal.ConfigVars
 	sortColumn         int
 	sortColumnPrevious int
 	sortDescending     bool
-	baseHeader         Header
 	header             Header
 	//headerNames        [5]string
 	processes []devices.Process
 )
+var (
+	lastProcsCount int64
+	lastTitle      string
+	lastUpdate     time.Time
+)
 
 func init() {
 	cfg = &internal.Config
-	sortColumn = devices.Cpu
 	sortDescending = true
-
-	baseHeader = Header{
-		Pid: HeaderAttr{HEADER_PID_LABEL, HEADER_ALIGN,
-			HEADER_TEXT_COLOR, HEADER_BKGD_COLOR,
-			3, 4},
-		User: HeaderAttr{HEADER_USER_LABEL, HEADER_ALIGN,
-			HEADER_TEXT_COLOR, HEADER_BKGD_COLOR,
-			5, 8},
-		Exec: HeaderAttr{HEADER_EXEC_LABEL, HEADER_ALIGN,
-			HEADER_TEXT_COLOR, HEADER_BKGD_COLOR,
-			12, 16},
-		Cpu: HeaderAttr{HEADER_CPU_LABEL, HEADER_ALIGN,
-			HEADER_TEXT_COLOR, HEADER_BKGD_COLOR,
-			4, 4},
-		Mem: HeaderAttr{HEADER_MEM_LABEL, HEADER_ALIGN,
-			HEADER_TEXT_COLOR, HEADER_BKGD_COLOR,
-			4, 4},
-		//Gpu: HeaderAttr{HEADER_GPU_LABEL, HEADER_ALIGN,
-		//  HEADER_TEXT_COLOR, HEADER_BKGD_COLOR,
-		//	4, 4},
-	}
+	sortColumn = devices.Cpu
 
 	processes, _ = devices.GetProcs(cfg.GroupProcesses)
-	header = baseHeader
+	header = updateHeaderText()
 }
 
-func updateHeaderNames() (h Header) {
-	const DownArrow string = "▼" // descending
-	const UpArrow = "▲"          // ascending
-	// Reset the table header
+func updateHeaderText() (h Header) {
 	h = baseHeader
-
-	if cfg.GroupProcesses {
-		h.Pid.Text = HEADER_CNT_LABEL
-	}
 
 	switch sortColumn {
 	case devices.Pid:
 		switch sortDescending {
 		case true:
 			if cfg.GroupProcesses {
-				h.Pid.Text = HEADER_CNT_LABEL + DownArrow
+				h.Pid.Text = HeaderCntLabel + DownArrow
+				//h.Pid.TextColor = HeaderTextColorSelected
+				//h.Pid.TextBkgdColor = HeaderTextBkgdColorSelected
 			} else {
-				h.Pid.Text = baseHeader.Pid.Text + DownArrow
+				h.Pid.Text = HeaderPidLabel + DownArrow
+				//h.Pid.TextColor = HeaderTextColorSelected
+				//h.Pid.TextBkgdColor = HeaderTextBkgdColorSelected
 			}
 		case false:
 			if cfg.GroupProcesses {
-				h.Pid.Text = HEADER_CNT_LABEL + UpArrow
+				h.Pid.Text = HeaderCntLabel + UpArrow
+				//h.Pid.TextColor = HeaderTextColorSelected
+				//h.Pid.TextBkgdColor = HeaderTextBkgdColorSelected
 			} else {
-				h.Pid.Text = baseHeader.Pid.Text + UpArrow
+				h.Pid.Text = HeaderPidLabel + UpArrow
+				//h.Pid.TextColor = HeaderTextColorSelected
+				//h.Pid.TextBkgdColor = HeaderTextBkgdColorSelected
 			}
-
 		}
 	case devices.User:
 		switch sortDescending {
 		case true:
-			h.User.Text = baseHeader.User.Text + DownArrow
+			h.User.Text = HeaderUserLabel + DownArrow
+			//h.User.TextColor = HeaderTextColorSelected
+			//h.User.TextBkgdColor = HeaderTextBkgdColorSelected
 		case false:
-			h.User.Text = baseHeader.User.Text + UpArrow
+			h.User.Text = HeaderUserLabel + UpArrow
+			//h.User.TextColor = HeaderTextColorSelected
+			//h.User.TextBkgdColor = HeaderTextBkgdColorSelected
 		}
 	case devices.Exec:
 		switch sortDescending {
 		case true:
-			h.Exec.Text = baseHeader.Exec.Text + DownArrow
+			h.Exec.Text = HeaderExecLabel + DownArrow
+			//h.Exec.TextColor = HeaderTextColorSelected
+			//h.Exec.TextBkgdColor = HeaderTextBkgdColorSelected
 		case false:
-			h.Exec.Text = baseHeader.Exec.Text + UpArrow
+			h.Exec.Text = HeaderExecLabel + UpArrow
+			//h.Exec.TextColor = HeaderTextColorSelected
+			//h.Exec.TextBkgdColor = HeaderTextBkgdColorSelected
 		}
 	case devices.Cpu:
 		switch sortDescending {
 		case true:
-			h.Cpu.Text = baseHeader.Cpu.Text + DownArrow
+			h.Cpu.Text = HeaderCpuLabel + DownArrow
+			h.Cpu.TextColor = tcell.ColorWhite
+			//h.Cpu.TextBkgdColor = HeaderTextBkgdColorSelected
 		case false:
-			h.Cpu.Text = baseHeader.Cpu.Text + UpArrow
+			h.Cpu.Text = HeaderCpuLabel + UpArrow
+			//h.Cpu.TextColor = HeaderTextColorSelected
+			//h.Cpu.TextBkgdColor = HeaderTextBkgdColorSelected
 		}
 	case devices.Mem:
 		switch sortDescending {
 		case true:
-			h.Mem.Text = baseHeader.Mem.Text + DownArrow
+			h.Mem.Text = HeaderMemLabel + DownArrow
+			//h.Mem.TextColor = HeaderTextColorSelected
+			//h.Mem.TextBkgdColor = HeaderTextBkgdColorSelected
 		case false:
-			h.Mem.Text = baseHeader.Mem.Text + UpArrow
+			h.Mem.Text = HeaderMemLabel + UpArrow
+			//h.Mem.TextColor = HeaderTextColorSelected
+			//h.Mem.TextBkgdColor = HeaderTextBkgdColorSelected
 		}
 	}
 	return h
@@ -162,14 +191,15 @@ func UpdateProcs(app *tview.Application, procsTbl *tview.Table, update time.Dura
 		SetSeparator(tview.BoxDrawingsLightVertical).
 		SetSelectable(false, true).
 		SetEvaluateAllRows(true).
-		SetBorder(true).
-		SetTitle(PROCS_LABEL)
+		SetBorder(true)
+	//procsTbl.SetBackgroundColor(tcell.ColorGray)
+
 	// Set the default sort direction and selected cell (CPU%, descending)
 	procsTbl.Select(0, sortColumn)
 	// todo: Input capture get and set sortColumn and sortDescending
 	procsTbl.SetMouseCapture(
 		func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
-			if action == tview.MouseLeftClick {
+			if action == tview.MouseLeftClick || action == tview.MouseRightClick {
 				switch sortDescending {
 				case true:
 					sortDescending = false
@@ -181,15 +211,17 @@ func UpdateProcs(app *tview.Application, procsTbl *tview.Table, update time.Dura
 		})
 
 	for {
-		processes, _ = devices.GetProcs(cfg.GroupProcesses)
 		sortColumnPrevious = sortColumn         // We remember previous column sorting
 		_, sortColumn = procsTbl.GetSelection() // Overwrite and get current selection
 		// If the newly selected column isn't the same, always start off by sortDescending
 		if sortColumnPrevious != sortColumn {
 			sortDescending = true
 		}
+
+		processes, _ = devices.GetProcs(cfg.GroupProcesses)
 		procs, _ := devices.SortProcs(processes, sortColumn, sortDescending)
-		header = updateHeaderNames()
+		procsCnt, _ := devices.GetProcsCount()
+		procsCntLabel := strconv.FormatInt(procsCnt, 10)
 
 		time.Sleep(update)
 		// We want to keep the amount of rows scrolled down then set it last
@@ -197,6 +229,47 @@ func UpdateProcs(app *tview.Application, procsTbl *tview.Table, update time.Dura
 		rowOffset, _ := procsTbl.GetOffset()
 
 		app.QueueUpdateDraw(func() {
+			/// This area is logic for drawing the Processes Title and border colors
+			var title string
+			if lastProcsCount < 1 {
+				// Initialize lastProcsCount if 0 or nil
+				lastProcsCount = procsCnt
+			}
+			// Less processes are usually good - DOWNARROW + GREEN
+			if procsCnt < lastProcsCount {
+				delta := strconv.FormatInt(lastProcsCount-procsCnt, 10)
+				title = "[ " + procsLabel + " · " + GREEN + procsCntLabel + "(-" + delta + ")" + DownArrow + WHITE + " ]"
+				procsTbl.SetBorderColor(tcell.ColorGreen).SetTitle(title)
+				lastUpdate = time.Now().UTC()
+			} else if procsCnt > lastProcsCount {
+				// More processes are usually bad - UPARROW + RED
+				delta := strconv.FormatInt(procsCnt-lastProcsCount, 10)
+				title = "[ " + procsLabel + " · " + RED + procsCntLabel + "(+" + delta + ")" + UpArrow + WHITE + " ]"
+				procsTbl.SetBorderColor(tcell.ColorRed).SetTitle(title)
+				lastUpdate = time.Now().UTC()
+			} else if procsCnt == lastProcsCount {
+				sec := time.Now().UTC().Sub(lastUpdate)
+				// If the current processes count is the same as the last update
+				//	for more than X (if sec.Seconds() >= X) seconds, then
+				//	overwrite to DASH + WHITE
+				if sec.Seconds() >= 20 {
+					title = "[ " + procsLabel + " · " + WHITE + procsCntLabel + "(-)" + WHITE + " ]"
+					procsTbl.SetBorderColor(tcell.ColorWhite).SetTitle(title)
+					//lastUpdate = time.Now().UTC()
+				} // else if sec.Seconds() < 4 {
+				//	procsTbl.SetTitle(lastTitle) //.SetBorderColor(tcell.ColorYellow)
+				//	//lastUpdate = time.Now().UTC()
+				//}
+			}
+			// Remember the number of processes and previous title for
+			//	comparison on next iteration
+			lastProcsCount = procsCnt
+			lastTitle = title
+			/// END PROCS BOX TITLE ////////////////////////////////////////////
+
+			/// START TABLE UI /////////////////////////////////////////////////
+			// Reset the table header
+			header = updateHeaderText()
 
 			// ** HEADER SETUP **
 			procsTbl.SetCell(
@@ -206,8 +279,8 @@ func UpdateProcs(app *tview.Application, procsTbl *tview.Table, update time.Dura
 					Align:           header.Pid.TextAlign,
 					MaxWidth:        header.Pid.MaxWidth,
 					Expansion:       header.Pid.MinWidth,
-					Color:           HEADER_TEXT_COLOR,
-					BackgroundColor: HEADER_BKGD_COLOR,
+					Color:           header.Pid.TextColor,
+					BackgroundColor: header.Pid.TextBkgdColor,
 					Transparent:     false,
 					//Attributes:      0,
 					//NotSelectable:   false,
@@ -220,8 +293,8 @@ func UpdateProcs(app *tview.Application, procsTbl *tview.Table, update time.Dura
 					Align:           header.User.TextAlign,
 					MaxWidth:        header.User.MaxWidth,
 					Expansion:       header.User.MinWidth,
-					Color:           HEADER_TEXT_COLOR,
-					BackgroundColor: HEADER_BKGD_COLOR,
+					Color:           header.User.TextColor,
+					BackgroundColor: header.User.TextBkgdColor,
 					Transparent:     false,
 					//Attributes:      0,
 					//NotSelectable:   false,
@@ -234,8 +307,8 @@ func UpdateProcs(app *tview.Application, procsTbl *tview.Table, update time.Dura
 					Align:           header.Exec.TextAlign,
 					MaxWidth:        header.Exec.MaxWidth,
 					Expansion:       header.Exec.MinWidth,
-					Color:           HEADER_TEXT_COLOR,
-					BackgroundColor: HEADER_BKGD_COLOR,
+					Color:           header.Exec.TextColor,
+					BackgroundColor: header.Exec.TextBkgdColor,
 					Transparent:     false,
 					//Attributes:      0,
 					//NotSelectable:   false,
@@ -248,8 +321,8 @@ func UpdateProcs(app *tview.Application, procsTbl *tview.Table, update time.Dura
 					Align:           header.Cpu.TextAlign,
 					MaxWidth:        header.Cpu.MaxWidth,
 					Expansion:       header.Cpu.MinWidth,
-					Color:           HEADER_TEXT_COLOR,
-					BackgroundColor: HEADER_BKGD_COLOR,
+					Color:           header.Cpu.TextColor,
+					BackgroundColor: header.Cpu.TextBkgdColor,
 					Transparent:     false,
 					//Attributes:      0,
 					//NotSelectable:   false,
@@ -262,8 +335,8 @@ func UpdateProcs(app *tview.Application, procsTbl *tview.Table, update time.Dura
 					Align:           header.Mem.TextAlign,
 					MaxWidth:        header.Mem.MaxWidth,
 					Expansion:       header.Mem.MinWidth,
-					Color:           HEADER_TEXT_COLOR,
-					BackgroundColor: HEADER_BKGD_COLOR,
+					Color:           header.Mem.TextColor,
+					BackgroundColor: header.Mem.TextBkgdColor,
 					Transparent:     false,
 					//Attributes:      0,
 					//NotSelectable:   false,
@@ -274,44 +347,50 @@ func UpdateProcs(app *tview.Application, procsTbl *tview.Table, update time.Dura
 			for i := range procs {
 				// Start at _row == 1 and not zero because we don't want to
 				//	overwrite the header row!
-				_row := i + 1
+				row := i + 1
 				procsTbl.
-					SetCell(_row, devices.Pid, &tview.TableCell{
+					SetCell(row, devices.Pid, &tview.TableCell{
+						//Color:       header.Pid.TextColor,
 						Text:        strconv.Itoa(procs[i].Pid),
 						Align:       tview.AlignCenter,
 						Expansion:   header.Pid.MinWidth,
 						MaxWidth:    header.Pid.MaxWidth,
 						Transparent: true,
 					}).
-					SetCell(_row, devices.User, &tview.TableCell{
+					SetCell(row, devices.User, &tview.TableCell{
+						//Color:       header.User.TextColor,
 						Text:        procs[i].User,
 						Align:       tview.AlignLeft,
 						Expansion:   header.User.MinWidth,
 						MaxWidth:    header.User.MaxWidth,
 						Transparent: true,
 					}).
-					SetCell(_row, devices.Exec, &tview.TableCell{
+					SetCell(row, devices.Exec, &tview.TableCell{
+						//Color:       header.Exec.TextColor,
 						Text:        procs[i].Name,
 						Align:       tview.AlignLeft,
 						Expansion:   header.Exec.MinWidth,
 						MaxWidth:    header.Exec.MaxWidth,
 						Transparent: true,
 					}).
-					SetCell(_row, devices.Cpu, &tview.TableCell{
+					SetCell(row, devices.Cpu, &tview.TableCell{
+						//Color:       header.Cpu.TextColor,
 						Text:        formatValue(procs[i].Cpu, 2),
 						Align:       tview.AlignCenter,
 						Expansion:   header.Cpu.MinWidth,
 						MaxWidth:    header.Cpu.MaxWidth,
 						Transparent: true,
 					}).
-					SetCell(_row, devices.Mem, &tview.TableCell{
+					SetCell(row, devices.Mem, &tview.TableCell{
+						//Color:       header.Mem.TextColor,
 						Text:        formatValue(procs[i].Mem, 2),
 						Align:       tview.AlignCenter,
 						Expansion:   header.Mem.MinWidth,
 						MaxWidth:    header.Mem.MaxWidth,
 						Transparent: true,
 					}) //.
-				//	SetCell(_row, devices.Gpu, &tview.TableCell{
+				//	SetCell(row, devices.Gpu, &tview.TableCell{
+				//	    //Color:       header.Gpu.TextColor,
 				//		Text:        formatValue(procs[i].Gpu, 2),
 				//		Align:       tview.AlignCenter,
 				//		Expansion:   header.Gpu.MinWidth,
@@ -320,6 +399,7 @@ func UpdateProcs(app *tview.Application, procsTbl *tview.Table, update time.Dura
 				//	})
 				//}
 			}
+			header = updateHeaderText()
 
 			// This helps restore the amount of rows scrolled by the user
 			procsTbl.SetOffset(rowOffset, 0)
