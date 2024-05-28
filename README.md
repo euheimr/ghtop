@@ -1,66 +1,84 @@
 # ghtop (go htop)
-A terminal-based activity monitor inspired by [gotop](https://github.com/xxxserxxx/gotop), [htop](https://hisham.hm/htop/), [gtop](https://github.com/aksakalli/gtop) and [vtop](https://github.com/MrRio/vtop), entirely written in [Go](https://golang.org/).
+
+*A Cross-platform SysAdmin tool via clickable Terminal UI (TUI) written in pure Go*
+
+This is an attempt at an iteration of `htop` in Golang as a terminal UI for system administrators, developers and engineers for troubleshooting and monitoring.
+
+---
+## Features
+
+_Supports_:
+- [x] Windows
+- [x] MacOs
+- [x] Linux (tested on Debian only at the moment)
+
+
+_Requires_:
+- Windows Terminal (NOT `conhost.exe` aka `cmd`)
+- Powershell
+- zsh (MacOS)
+- bash (or any terminal supporting shell scripts)
+
+**Please Note**: 
+
+`cmd` or `conhost.exe` are NOT supported because unicode or braille for the graphs are not valid characters for the old and retired Windows console. [Windows Terminal](https://github.com/microsoft/terminal/releases) aka `wt` is installed by default on Windows 11 and replaces `cmd`/`conhost.exe`.
+
 
 ---
 
-**Also, a special _THANK YOU_ to [cjbassi](https://github.com/cjbassi/) for making the original [gotop](https://github.com/cjbassi/gotop) and [xxxserxxx](https://github.com/xxxserxxx/) for maintaining [gotop](https://github.com/xxxserxxx/gotop)!**
+## Development
 
-This application is inspired by `gotop`, but I wanted to make my own version with improvements (sysinfo, bars instead of mostly graphs, and code structure changes) and by using the newer Text UI (TUI) go package [tview](https://github.com/rivo/tview)!
+### Build
 
-Subsequently, I had to draw a lot of my own widgets/primitives that would _otherwise_ be included with the TUI go package [termui](https://github.com/gizak/termui) used by [gotop](https://github.com/xxxserxxx/gotop).
+Build and run:
 
-## Why use this over gotop?
+`sh ./run.sh`
 
-!TODO: do performance testing between gotop and ghtop
+To _always force_ a build, `cd` to the project directory and run:
 
-1. ?performance
-2. Works for Windows, Linux and macOS (explicitly tested for all 3)
-3. This is written for Go version [1.20](https://go.dev/dl/)+, and thus takes advantage of the newer features of Go
-4. Most of the `gotop` dependencies are fairly out-of-date (uses old and soft-deprecated Go code)
-5. Uses the newer `tview` text UI go package (I personally like the general features and API it provides over `termui`)
+`sh ./run.sh --build` or `sh ./run.sh -b`
 
-**Most importantly, I wanted to learn Go.** 
+### TODO
+- [Compatibility]:
+  - [ ] : `cmd` is not supported yet because braille from braille graphs cannot be displayed. (maybe change the glyphs from braille to lines?)
 
-This project helped me a lot and pushed me to learn most of the features of Go.
+- [Modules]:
+  - [ ] : Processes
+  - [ ] : CPU
+  - [ ] : CPU Temp
+  - [ ] : Memory
+  - [ ] : GPU
+  - [ ] : GPU Temp
+  - [ ] : Network
 
-## Install
-If you're on windows, the new windows terminal is packaged with this application under the `terminal` directory.
-This is executed in the end to start `ghtop`.
 
-**Please note: Unicode (Braille characters) isn't supported on the old Windows console (`cmd` / `conhost.exe`)!**
+### Non-standard Dependencies
+
+1. Text UI - [tview]("https://github.com/rivo/tview")
+   - `go get -u github.com/rivo/tview`
+2. Process utils - [gopsutil/v3](https://github.com/shirou/gopsutil)
+   - `go get -u github.com/shirou/gopsutil/v3`
+3. Config handling - [koanf](https://github.com/knadh/koanf)
+   - `go get -u github.com/knadh/koanf/v2`
+   - `go get -u github.com/knadh/koanf/providers/file`
+   - `go get -u github.com/knadh/koanf/parsers/toml`
 
 
-1. !todo: Download & Install from [Releases]()
+### Contributing
+    !TODO
 
-  **OR:** 
 
-2. Build it yourself
 
-   a. Windows
-      
-      1. `cmd` or `conhost.exe`:
-   
-       build.bat && install.bat
-
-      2. `Powershell`:
-       build.bat; install.bat
-
-   b. Linux & MacOS
-
-       build.sh
-
-3. Install & Add to path
-
-       install.sh
-
+---
 
 ## Built With:
 
- - tcell
  - tview
+ - tcell (tview dependency)
  - gopsutil
  - drawille-go
 
+---
 
 ## Reference
 
