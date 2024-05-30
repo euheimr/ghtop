@@ -21,8 +21,8 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
-	github.com/stretchr/testify v1.8.4 // indirect
-	golang.org/x/sys v0.11.0 // indirect
+	github.com/stretchr/testify v1.9.0 // indirect
+	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/term v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 )
