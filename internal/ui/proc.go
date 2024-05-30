@@ -5,11 +5,11 @@ import (
 	"time"
 )
 
-var procTblLabel = "[ Processes ]"
+var procsTblLabel = "[ Processes ]"
 
-func UpdateProc(app *tview.Application, procTbl *tview.Table, update time.Duration) {
+func UpdateProcs(app *tview.Application, procsTbl *tview.Table, update time.Duration) {
 
-	procTbl.SetBorder(true).SetTitle(procTblLabel)
+	procsTbl.SetBorder(true).SetTitle(procsTblLabel)
 
 	for {
 		time.Sleep(update)
