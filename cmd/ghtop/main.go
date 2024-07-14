@@ -28,14 +28,12 @@ type ConfigVars struct {
 	Debug          bool
 	UpdateInterval time.Duration
 	Celsius        bool
-	EnableNvidia   bool
-	EnableTUI      bool
+	GroupProcesses bool
+	EnableGPU      bool
+	EnableUI       bool
 }
 
-const (
-	CONFIG_FILENAME             = "cfg.toml"
-	CONFIG_UPDATE_DELAY_SECONDS = 3
-)
+const CONFIG_FILENAME = "config.toml"
 
 var (
 	app          *tview.Application
@@ -44,12 +42,13 @@ var (
 	selectedView int
 )
 
-var cfg = &ConfigVars{
+var Cfg = &ConfigVars{
 	Debug:          false,
 	UpdateInterval: 100 * time.Millisecond,
 	Celsius:        true,
-	EnableNvidia:   false,
-	EnableTUI:      true,
+	GroupProcesses: true,
+	EnableGPU:      false,
+	EnableUI:       false,
 }
 
 func setupLayout(app *tview.Application) {
@@ -73,7 +72,8 @@ func setupLayout(app *tview.Application) {
 
 	// build row 1
 	flexRow1 := tview.NewFlex()
-	if cfg.Debug {
+
+	if Cfg.Debug {
 		flexRow1.
 			AddItem(layout.info, 0, 2, false).
 			AddItem(layout.cpu, 0, 7, false).
@@ -96,7 +96,7 @@ func setupLayout(app *tview.Application) {
 			0, 1, false)
 
 	// if theres a GPU then add `GPU` and `GPUTemp` boxes
-	if cfg.EnableNvidia {
+	if Cfg.EnableGPU {
 		layout.gpu = tview.NewBox()
 		layout.gpuTemp = tview.NewBox()
 
@@ -108,10 +108,13 @@ func setupLayout(app *tview.Application) {
 				0, 1, false)
 	}
 
+	row3 := tview.NewTextView()
+	row3.SetText(" <F1> Test   <F2> Test 1   <F3> Test 2   <F4> Test 3")
+
 	fMain := tview.NewFlex()
-	fMain.
-		AddItem(flexRow1, 0, 22, false).
-		AddItem(flexRow2, 0, 40, false)
+	fMain.AddItem(flexRow1, 0, 22, false)
+	fMain.AddItem(flexRow2, 0, 40, false)
+	fMain.AddItem(row3, 0, 1, false)
 	// this sets the first "Main" layout view to always be rows
 	fMain.SetDirection(tview.FlexRow)
 
@@ -119,34 +122,19 @@ func setupLayout(app *tview.Application) {
 	app.SetRoot(fMain, true).EnableMouse(true)
 }
 
-func updateConfigVars(k *koanf.Koanf, f *file.File) {
-	if err := k.Load(f, toml.Parser()); err != nil {
-		slog.Error("Could not load config file! " + err.Error())
-	}
-	cfg = &ConfigVars{
-		Debug:          k.Bool("Debug"),
-		UpdateInterval: k.Duration("UpdateInterval") * time.Millisecond,
-		Celsius:        k.Bool("Celsius"),
-		// TODO: detect AMD / nvidia gpus automatically and override??
-		EnableNvidia: k.Bool("EnableNvidia"),
-		EnableTUI:    k.Bool("EnableTUI"),
-	}
-	slog.Info("Updated configuration variables")
-}
-
 func startApp(app *tview.Application) {
 	// we must first setup the UI layout before starting the goroutines below
 	setupLayout(app)
 
 	// queue the draw updates with goroutines
-	go ui.UpdateCpu(app, layout.cpu, cfg.UpdateInterval)
-	go ui.UpdateCpuTemp(app, layout.cpuTemp, cfg.UpdateInterval)
-	go ui.UpdateMem(app, layout.mem, cfg.UpdateInterval)
-	go ui.UpdateNet(app, layout.net, cfg.UpdateInterval)
-	go ui.UpdateProcs(app, layout.procsTbl, cfg.UpdateInterval)
-	if cfg.EnableNvidia {
-		go ui.UpdateGpu(app, layout.gpu, cfg.UpdateInterval)
-		go ui.UpdateGpuTemp(app, layout.gpuTemp, cfg.UpdateInterval)
+	go ui.UpdateCpu(app, layout.cpu, Cfg.UpdateInterval)
+	go ui.UpdateCpuTemp(app, layout.cpuTemp, Cfg.UpdateInterval)
+	go ui.UpdateMem(app, layout.mem, Cfg.UpdateInterval)
+	go ui.UpdateNet(app, layout.net, Cfg.UpdateInterval)
+	go ui.UpdateProcs(app, layout.procsTbl, Cfg.GroupProcesses, Cfg.UpdateInterval)
+	if Cfg.EnableGPU {
+		go ui.UpdateGpu(app, layout.gpu, Cfg.UpdateInterval)
+		go ui.UpdateGpuTemp(app, layout.gpuTemp, Cfg.UpdateInterval)
 	}
 
 	// We set the keybinds here (Quit app, force reload, change view, etc ...)
@@ -169,40 +157,87 @@ func startApp(app *tview.Application) {
 	}
 }
 
+func updateConfigVars(k *koanf.Koanf, f *file.File) {
+	slog.Debug("Loading variables from config file at `" + CONFIG_FILENAME + "` ...")
+	if err := k.Load(f, toml.Parser()); err != nil {
+		slog.Error("Could not load config file! " + err.Error())
+	}
+	Cfg = &ConfigVars{
+		Debug:          k.Bool("Debug"),
+		UpdateInterval: k.Duration("UpdateInterval") * time.Millisecond,
+		Celsius:        k.Bool("Celsius"),
+		GroupProcesses: k.Bool("GroupProcesses"),
+		// TODO: detect AMD / nvidia gpus automatically and override??
+		EnableGPU: k.Bool("EnableGPU"),
+		EnableUI:  k.Bool("EnableUI"),
+	}
+	slog.Info("Successfully updated configuration variables from `" + CONFIG_FILENAME + "`")
+}
+
+func writeConfigFile() {
+	slog.Debug("Creating new config file named `" + CONFIG_FILENAME + "` ...")
+	f, err := os.Create(CONFIG_FILENAME)
+	if err != nil {
+		slog.Error("Could not create config file! " + err.Error())
+	}
+
+	defer func(f *os.File) {
+		if err := f.Close(); err != nil {
+			slog.Error("Could not close config file! " + err.Error())
+		}
+	}(f)
+
+	updateIntervalStr, _, _ := strings.Cut(Cfg.UpdateInterval.String(), "ms")
+	fileData := []byte("Debug=" + strconv.FormatBool(Cfg.Debug) + "\n\n" +
+		"# Set how frequently to update the UI (in milliseconds - 1000ms equals 1 second)\n" +
+		"UpdateInterval=" + updateIntervalStr + "\n\n" +
+		"# Temperature units - `true` for Celsius, `false` for Fahrenheit\n" +
+		"Celsius=" + strconv.FormatBool(Cfg.Celsius) + "\n\n" +
+		"# Enable or disable grouping of processes in Processes table (true or false)\n" +
+		"GroupProcesses=" + strconv.FormatBool(Cfg.GroupProcesses) + "\n\n" +
+		"# Enable or disable GPU activity and temperature boxes (true or false)\n" +
+		"EnableGPU=" + strconv.FormatBool(Cfg.EnableGPU) + "\n\n" +
+		"# this is for debugging... set to false if you want to read startup / setup logs\n" +
+		"EnableUI=" + strconv.FormatBool(Cfg.EnableUI) + "\n\n")
+	if _, err := f.Write(fileData); err != nil {
+		slog.Error("Failed to write config file! " + err.Error())
+	}
+
+	slog.Info("Successfully wrote config file to " + CONFIG_FILENAME)
+}
+
 func main() {
 	app = tview.NewApplication()
 
-	slog.Debug("Loading cfg default values ...")
+	logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
+	slog.SetDefault(slog.New(logHandler))
+
 	k := koanf.New(".")
 	f := file.Provider(CONFIG_FILENAME)
 
-	// If the config file exists, update `cfg` using updateConfigVars()
+	// If the config file exists, update `Cfg` using updateConfigVars()
 	if _, err := os.Stat(CONFIG_FILENAME); err == nil {
 		// load config values from file and start the app
 		updateConfigVars(k, f)
-		startApp(app)
 
-		// also watch for any file changes and restart the app as needed
-		f.Watch(func(event interface{}, err error) {
-			if err != nil {
-				slog.Error("Cannot watch for config file changes! " + err.Error())
-			}
-			time.Sleep(CONFIG_UPDATE_DELAY_SECONDS * time.Second)
-			app.Suspend(func() {
-				// load the new values and restart
-				updateConfigVars(k, f)
-				startApp(app)
-			})
-		})
-	} else {
-		// this code is run if a config file does not exist, effectively using default values
-		if cfg.EnableTUI {
+		if Cfg.EnableUI {
 			// If the text UI is enabled, run the app. Otherwise, don't start it.
 			//	This is mostly for debugging. Eventually I'll log to file... but not today
 			startApp(app)
 		} else {
-			slog.Info("Did not start app - EnableTUI is " +
-				strconv.FormatBool(cfg.EnableTUI) + " !")
+			slog.Info("Did not start app - EnableUI is " +
+				strconv.FormatBool(Cfg.EnableUI) + " !")
+		}
+	} else {
+		// if a config file does not exist, use default values and start the app anyway
+		slog.Info("`" + CONFIG_FILENAME + "` does not exist!")
+		writeConfigFile()
+		time.Sleep(time.Second * 4)
+
+		if Cfg.EnableUI {
+			startApp(app)
+		} else {
+			slog.Info("Did not start app - EnableUI is " + strconv.FormatBool(Cfg.EnableUI) + " !")
 		}
 	}
 }
